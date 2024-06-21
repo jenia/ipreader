@@ -12,7 +12,7 @@ type IpCounter struct {
 	closed   bool
 }
 
-// Can only create one of this objects
+// Can only create one of these objects
 func NewIpCounter() *IpCounter {
 	ipSlices := make(chan []string, 1)
 	ipMap := make(map[string]bool, 1)
@@ -33,11 +33,13 @@ func (i *IpCounter) Count(wg *sync.WaitGroup) {
 	}
 }
 
+// TODO: Not thread safe
 func (i *IpCounter) Close() {
 	if i.closed == true {
 		return
 	}
 	close(i.ipSlices)
+	i.closed = true
 }
 
 func (i *IpCounter) AddIpSlice(ips []string) {
