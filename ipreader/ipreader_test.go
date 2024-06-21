@@ -1,7 +1,6 @@
 package ipreader
 
 import (
-	"fmt"
 	"strings"
 	"testing"
 )
@@ -41,9 +40,7 @@ func TestRead(t *testing.T) {
 		lines := strings.Split(fileContent, "\n")
 		lines = lines[:len(lines)-1] // drop the line with only the \n
 		for ipSlice := range ipChan {
-			fmt.Printf("\nwas here \n")
 			for j, ip := range ipSlice {
-				fmt.Printf("\n\ni %d, j %d, ip %s\n\n", i, j, ip)
 				if lines[i] != ipSlice[j] {
 					t.Fatalf("ip should be %s, but is %s", lines[i], ip)
 				}
