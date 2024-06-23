@@ -1,4 +1,5 @@
 # IpReader
+An asynchronous text processor and batch file reader.
 
 ## Architecture description
 
@@ -9,13 +10,13 @@ This program has two packages:
 - ipcounter
 
 ### ipreader package
-This package defines a function `ReadFile` that reads a file into a buffer and sends all the IPs contained in that buffer as a slice of strings to `Counter.AddIpSlice(ips []string)`.
+This package defines a function `ReadFile` that reads a file into a buffer and sends all the IPs contained in that buffer to `Counter.AddIpSlice(ips []string)`.
 
 Note the signature of the function `func ReadFile(file io.Reader, counter Counter, buffer []byte) error`
 
 It takes
-1. file handle `io.Reader`
-2. a `Counter` interface
+1. `io.Reader` file handle
+2. `Counter` interface
 ```
 type Counter interface {
 	AddIpSlice(ips []string)
@@ -24,11 +25,14 @@ type Counter interface {
 ```
 3. a `[]byte` buffer
 
-Using an interface, I decouple `ReadFile` function from whatever implements the `Counter` interface. In this case it's `ipcounter.IpCounter` that asynchronously counts the IPs in the slice `AddIpSlice(ips []string)`.
-This decoupling allows for simpler testing by unit testing each feature separately and simpler benchmarking but allowing to benchmark each feature separately.
-See the tests and benchmarks for details.
+Using an interface, I decouple `ReadFile` function from whatever implements the `Counter` interface which is Golang best practices. In this case it's `ipcounter.IpCounter` that asynchronously counts the IPs in the slice `AddIpSlice(ips []string)`.
+This decoupling allows for higher modularity which has important implications:
+1. Simpler code
+2. Simpler testing. Each feature can be unit tested separately. Same thing for benchmarking. See the tests and benchmarks for details.
 
-Furthermore, using a buffer, we can read the file 1MB at a time or 10MB at a time and bulk process the IPs that buffer. Furthermore, we control how much memory the program consumes i.e. whatever we pick as the size of the buffer.
+Furthermore, using a buffer + goroutines we can bulk read and async process the IPs.
+
+Lastly, using a buffer of fixed size we control how much memory the program consumes.
 
 
 ### ipcounter package
@@ -43,6 +47,7 @@ See the main function or the bench marking tests in `ipcounter` package to see h
 It seems that this program has better performance with larger slices. This was expected.
 
 ```
+cd ipcounter
 go test -bench=. -benchmem -memprofile mem.prof -cpuprofile cpu.prof -benchtime=10s
 
 goos: linux
