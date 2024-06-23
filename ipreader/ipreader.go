@@ -42,14 +42,16 @@ func ReadFile(file io.Reader, counter Counter, buffer []byte) error {
 		for scanner.Scan() {
 			ip := scanner.Text()
 			if ip == "" {
+				// TODO: this is an error actually... not fatal but should be reported
 				continue
 			}
 			ips = append(ips, ip)
 		}
 
+		// TODO: when do I look for scanner errors?
 		if err := scanner.Err(); err != nil {
 			fmt.Printf("scan buffer for new lines: %s\n", err.Error())
-			return fmt.Errorf("scanner buffer for new lines: %w", err)
+			return fmt.Errorf("scan buffer for new lines: %w", err)
 		}
 
 		tmpBuffer.Reset()

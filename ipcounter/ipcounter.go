@@ -23,17 +23,17 @@ func (i *IpCounter) Count(wg *sync.WaitGroup) {
 	defer wg.Done()
 	for ipSlice := range i.ipSlices {
 		for _, ip := range ipSlice {
+			i.mtx.Lock()
 			if _, ok := i.ipMap[ip]; !ok {
-				i.mtx.Lock()
 				i.Counter++
 				i.ipMap[ip] = true
-				i.mtx.Unlock()
 			}
+			i.mtx.Unlock()
 		}
 	}
 }
 
-// TODO: Not thread safe
+// Not thread safe
 func (i *IpCounter) Close() {
 	if i.closed == true {
 		return
