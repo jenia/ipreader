@@ -11,7 +11,9 @@ INSERT INTO ips (ipv4) values ip1, ip2,...
 COMMIT;
 ```
 
-I decided not to use a database demo purposes but instead focus on Golang and it's Goroutine functionality.
+Ofcourse the table `ips` needs to be indexed. If we're in a multi-tenant environment, then we need to search/insert using the column `tenant_id` (or something similar) as well.
+
+I decided not to use a database for demo purposes but instead focus on Golang and its asynchronous functionality.
 
 ## Architecture description
 
