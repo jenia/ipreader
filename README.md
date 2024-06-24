@@ -1,6 +1,18 @@
 # IpReader
 An asynchronous text processor and batch file reader.
 
+## Limitations
+This program consumes a lot of memory because it holds the IPs in memory in a hash table.
+Normally, this program should search/write the IPs to a relational database:
+```
+BEGIN SERIALIZABLE;
+SELECT ip FROM ips WHERE ip.ipv4 NOT IN (a batch of IPS);
+INSERT INTO ips (ipv4) values ip1, ip2,...
+COMMIT;
+```
+
+I decided not to use a database demo purposes but instead focus on Golang and it's Goroutine functionality.
+
 ## Architecture description
 
 This program reads a file that contains one IP address per line and counts the number of unique IP.
@@ -25,24 +37,21 @@ type Counter interface {
 ```
 3. a `[]byte` buffer
 
-Using an interface, I decouple `ReadFile` function from whatever implements the `Counter` interface which is Golang best practices. In this case it's `ipcounter.IpCounter` that asynchronously counts the IPs in the slice `AddIpSlice(ips []string)`.
+Using an interface, I decouple `ReadFile` function from whatever implements the `Counter` interface which is Golang best practices. In this case it's `ipcounter.IpCounter` that implements the `Counter` interface by asynchronously counting the IPs in the slice `AddIpSlice(ips []string)`.
 This decoupling allows for higher modularity which has important implications:
 1. Simpler code
 2. Simpler testing. Each feature can be unit tested separately. Same thing for benchmarking. See the tests and benchmarks for details.
 
 Furthermore, using a buffer + goroutines we can bulk read and async process the IPs.
 
-Lastly, using a buffer of fixed size we control how much memory the program consumes.
-
-
 ### ipcounter package
-This package defines a struct `IpCounter` that counts unique IPs sent to through the function `AddIpSlice`. Each item in the slice is one IP.
+This package defines a struct `IpCounter` that counts unique IPs sent to it using the function `AddIpSlice`. Each item in the slice is one IP.
 The struct `IpCounter` is meant to be instantiated once.
 The function `Count` can run, and it meant to be run (see benchmarking), on multiple go-routines
 
 See the main function or the bench marking tests in `ipcounter` package to see how to instantiate and use `IpCounter`
 
-## BenchMarking results.
+## CPU Benchmarking results.
 
 It seems that this program has better performance with larger slices. This was expected.
 
@@ -62,9 +71,7 @@ PASS
 ok  	github.com/Ecwid/new-job/ipcounter	70.597s
 ```
 
-### Conclusion regarding benchmarking
-
-
+### Conclusion regarding CPU benchmarking
 |                                          | ns/item              |
 | ---------------------------------------- | -------------------- |
 | BenchmarkCount1GoRoutine100ItemSlice-8   | 459.2 /100 = 4.592   |

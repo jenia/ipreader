@@ -20,7 +20,7 @@ func main() {
 	ipCounter := ipcounter.NewIpCounter()
 	wg.Add(1)
 	go ipCounter.Count(wg)
-	buf := make([]byte, 2^20)
+	buf := make([]byte, 1024 * 1024)
 	ipreader.ReadFile(file, ipCounter, buf)
 	wg.Wait()
 	fmt.Printf("Count is: %d\n", ipCounter.Counter)

@@ -56,9 +56,9 @@ func BenchmarkCount1GoRoutine100ItemSlice(b *testing.B) {
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 	go c.Count(&wg)
-	b.ResetTimer()
 	buf := make([]byte, 4)
 	ipSlice := make([]string, 100)
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		binary.LittleEndian.PutUint32(buf, rand.Uint32())
 		ip := fmt.Sprintf("%s", net.IP(buf))
@@ -100,9 +100,9 @@ func BenchmarkCount10GoRoutine100ItemSlice(b *testing.B) {
 	for range 10 {
 		go c.Count(&wg)
 	}
-	b.ResetTimer()
 	buf := make([]byte, 4)
 	ipSlice := make([]string, 100)
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		binary.LittleEndian.PutUint32(buf, rand.Uint32())
 		ip := fmt.Sprintf("%s", net.IP(buf))
@@ -123,9 +123,9 @@ func BenchmarkCount10GoRoutine1000ItemSlice(b *testing.B) {
 	for range 10 {
 		go c.Count(&wg)
 	}
-	b.ResetTimer()
 	buf := make([]byte, 4)
 	ipSlice := make([]string, 1000)
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		binary.LittleEndian.PutUint32(buf, rand.Uint32())
 		ip := fmt.Sprintf("%s", net.IP(buf))
