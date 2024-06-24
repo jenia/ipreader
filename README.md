@@ -6,8 +6,18 @@ This program consumes a lot of memory because it holds the IPs in memory in a ha
 Normally, this program should search/write the IPs to a relational database:
 ```
 BEGIN SERIALIZABLE;
-SELECT ip FROM ips WHERE ip.ipv4 NOT IN (a batch of IPS);
+SELECT ip
+FROM ips
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM (VALUES
+        (ip1),
+        (ip2),
+    ) AS batch(ip)
+    WHERE ips.ipv4 = batch.ip
+);
 INSERT INTO ips (ipv4) values ip1, ip2,...
+ON CONFLICT DO NOTHING;
 COMMIT;
 ```
 

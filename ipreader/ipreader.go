@@ -2,8 +2,6 @@ package ipreader
 
 import (
 	"bufio"
-	"bytes"
-	"errors"
 	"fmt"
 	"io"
 )
@@ -15,64 +13,34 @@ type Counter interface {
 
 // TODO: write error if IP is not parsable
 func ReadFile(file io.Reader, counter Counter, buffer []byte) error {
-	if len(buffer) < 17 {
-		return errors.New("buffer size below length of ipv4 size")
-	}
-
 	defer counter.Close()
-	var tmpBuffer bytes.Buffer
 
-	var residual []byte
-	for {
-		bytesRead, err := file.Read(buffer)
+	scanner := bufio.NewScanner(file)
+	scanner.Buffer(buffer, 32)
+	scanner.Split(bufio.ScanLines)
 
-		if err != nil && err != io.EOF {
-			fmt.Printf("read file: %s\n", err.Error())
-			return fmt.Errorf("read file: %w", err)
+	var ips []string
+	for scanner.Scan() {
+		ip := scanner.Text()
+		if ip == "" {
+			// TODO: this is an error actually... not fatal but should be reported
+			continue
 		}
-		if bytesRead == 0 {
-			break
+		ips = append(ips, ip)
+		if len(ips) >= 100 {
+			counter.AddIpSlice(ips)
+			ips = nil // Clear the slice to free memory
 		}
-
-		tmpBuffer.Write(buffer[:bytesRead])
-		scanner := bufio.NewScanner(&tmpBuffer)
-		scanner.Split(bufio.ScanLines)
-
-		var ips []string
-		for scanner.Scan() {
-			ip := scanner.Text()
-			if ip == "" {
-				// TODO: this is an error actually... not fatal but should be reported
-				continue
-			}
-			ips = append(ips, ip)
-		}
-
-		// TODO: when do I look for scanner errors?
-		if err := scanner.Err(); err != nil {
-			fmt.Printf("scan buffer for new lines: %s\n", err.Error())
-			return fmt.Errorf("scan buffer for new lines: %w", err)
-		}
-
-		tmpBuffer.Reset()
-		if bytesRead == len(buffer) {
-			residual = keepResidual(ips)
-			if len(residual) > 0 {
-				ips = ips[:len(ips)-1]
-				tmpBuffer.Write(residual)
-			}
-		}
+	}
+	if len(ips) > 0 {
 		counter.AddIpSlice(ips)
 	}
-	return nil
-}
 
-func keepResidual(lines []string) []byte {
-	if len(lines) > 0 {
-		lastLine := lines[len(lines)-1]
-		if len(lastLine) > 0 && lastLine[len(lastLine)-1] != '\n' {
-			return []byte(lastLine)
-		}
+	// Check for errors in the scanner
+	if err := scanner.Err(); err != nil {
+		fmt.Printf("scan buffer for new lines: %s\n", err.Error())
+		return fmt.Errorf("scan buffer for new lines: %w", err)
 	}
-	return []byte{}
-}
+
+	return nil
+} 
