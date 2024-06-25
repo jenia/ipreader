@@ -5,18 +5,18 @@ import (
 )
 
 type IpCounter struct {
-	ipSlices chan []string
+	ipSlices chan []uint32
 	Counter  uint64
-	ipMap    map[string]bool
+	ips      []bool
 	mtx      sync.Mutex
 	closed   bool
 }
 
 // Can only create one of these objects
 func NewIpCounter() *IpCounter {
-	ipSlices := make(chan []string, 1)
-	ipMap := make(map[string]bool, 1)
-	return &IpCounter{ipSlices: ipSlices, ipMap: ipMap}
+	ipSlices := make(chan []uint32, 1)
+	ips := make([]bool, uint64(1) << 32)
+	return &IpCounter{ipSlices: ipSlices, ips: ips}
 }
 
 func (i *IpCounter) Count(wg *sync.WaitGroup) {
@@ -24,9 +24,9 @@ func (i *IpCounter) Count(wg *sync.WaitGroup) {
 	for ipSlice := range i.ipSlices {
 		for _, ip := range ipSlice {
 			i.mtx.Lock()
-			if _, ok := i.ipMap[ip]; !ok {
+			if i.ips[ip] == false {
 				i.Counter++
-				i.ipMap[ip] = true
+				i.ips[ip] = true
 			}
 			i.mtx.Unlock()
 		}
@@ -42,6 +42,6 @@ func (i *IpCounter) Close() {
 	i.closed = true
 }
 
-func (i *IpCounter) AddIpSlice(ips []string) {
+func (i *IpCounter) AddIpSlice(ips []uint32) {
 	i.ipSlices <- ips
 }
