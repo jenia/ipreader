@@ -16,12 +16,11 @@ type Counter interface {
 
 func Ipv4ToInt(ipaddr net.IP) (uint32, error) {
 	if ipaddr.To4() == nil {
-		return 0, errors.New(fmt.Sprintf("not an ip addr: %+v", ipaddr))
+		return 0, errors.New(fmt.Sprintf("not an ip4 addr: %+v", ipaddr))
 	}
 	return binary.BigEndian.Uint32(ipaddr.To4()), nil
 }
 
-// TODO: write error if IP is not parsable
 func ReadFile(file io.Reader, counter Counter, buffer []byte) error {
 	defer counter.Close()
 
@@ -33,7 +32,7 @@ func ReadFile(file io.Reader, counter Counter, buffer []byte) error {
 	for scanner.Scan() {
 		ip := scanner.Text()
 		if ip == "" {
-			// TODO: this is an error actually... not fatal but should be reported
+			fmt.Print("error: empty line")
 			continue
 		}
 		ipInt, err := Ipv4ToInt(net.ParseIP(ip))
@@ -43,14 +42,14 @@ func ReadFile(file io.Reader, counter Counter, buffer []byte) error {
 		ips = append(ips, ipInt)
 		if len(ips) >= 100 {
 			counter.AddIpSlice(ips)
-			ips = nil // Clear the slice to free memory
+			ips = nil
 		}
 	}
 	if len(ips) > 0 {
 		counter.AddIpSlice(ips)
 	}
 
-	// Check for errors in the scanner
+	// TODO: properly check for errors in the scanner. I think we might need to check it at each iteration?
 	if err := scanner.Err(); err != nil {
 		fmt.Printf("scan buffer for new lines: %s\n", err.Error())
 		return fmt.Errorf("scan buffer for new lines: %w", err)

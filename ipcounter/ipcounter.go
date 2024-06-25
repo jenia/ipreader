@@ -18,6 +18,10 @@ type IpCounter struct {
 // Can only create one of these objects
 func NewIpCounter() *IpCounter {
 	ipSlices := make(chan []uint32, 1)
+	// I'm making a multiplication table of sorts to hold the IPs
+	// the number 134_217_728 = number of IP v4 / 32
+	// 32 is the length of uint32
+	// So this means that number of IPv4 = 134_217_728 * 32
 	ips := make([]uint32, 134_217_728)
 	return &IpCounter{ipSlices: ipSlices, ips: ips}
 }

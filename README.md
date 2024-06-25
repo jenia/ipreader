@@ -3,24 +3,30 @@ An asynchronous text processor and batch file reader.
 
 ## Table of contents
   - [How to use the program](#How-to-use-the-program)
-    - [Testing](#testing)
-	- [Profiling](#profiling)
+    - [Run](#RUN)
+    - [Test](#test)
+	- [Profile](#profile)
   - [Results from processing the 100G file](#Results-from-processing-the-100G-file)
   - [Architecture description](#Architecture-description)
     - [ipreader package](#ipreader-package)
 	- [ipcounter package](#ipcounter-package)
   - [Profiling](#Profiling)
-    - [CPU Benchmarking results](#CPU-Benchmarking-results)
-	- [Conclusion regarding CPU benchmarking](#Conclusion-regarding-CPU-benchmarking)
+    - [Memory profiling results](#Memory-profiling-results)
 
 ## How to use the program
-Simply open the main.go file, and change the value of the variable `	file, err := os.Open("/run/media/jenia/My Book/ip_addresses")` with the path to the IP file you want to process
+Simply open the `main.go` file, and change the value of the variable `file, err := os.Open("/run/media/jenia/My Book/ip_addresses")` with the path to the IP file you want to process
 
-### Testing
+### RUN
+
+```
+go run .
+```
+
+### Test
 ```
 go test ./...
 ```
-### Profiling
+### Profile
 ```
 go test -bench=. -benchmem -memprofile mem.prof -cpuprofile cpu.prof -benchtime=60s
 go tool pprof mem.prof
@@ -30,8 +36,12 @@ top 20
 ## Results from processing the 100G file
 
 ```
-ipreader>go run .
+$ time go run .
 Count is: 301774584
+
+real	1m10.062s
+user	1m11.607s
+sys	0m4.389s
 ```
 
 Sanity check:
@@ -42,7 +52,7 @@ $ sort "/run/media/jenia/My Book/ip_addresses" | uniq | wc -l
 
 ## Architecture description
 
-This program reads a file that contains one IP address per line and asynchronously counts the number of unique IPs contained in that file.
+This program reads a file that contains one IP address per line and counts the number of unique IPs contained in that file. Reading and counting happens asynchronously.
 
 This program has two packages:
 - ipreader
@@ -50,10 +60,9 @@ This program has two packages:
 
 This program is carefully designed to process large volume of data while using a minimum of resources:
 
-- This program is profile using Golang pprof tooling
+- This program is profiled using Golang pprof tooling
 - ips are treated as numbers rather than strings to optimize memory and lookup performance
 - ips are stored in a kind of multiplication table to optimize memory usage
-- ipcounter pre-allocate a 2^32 slice to store all IP V4 to avoid doing unnecessary malloc and data copying
 - ipcounter and ipreader are async to maximize CPU utilization
 - ipreader is carefully designed to read the file one buffer size at a time to minimize context switching
 
@@ -73,7 +82,7 @@ type Counter interface {
 ```
 3. a `[]byte` buffer
 
-Using an interface, I decouple `ReadFile` function from whatever implements the `Counter` interface which is Golang best practices. In this case it's `ipcounter.IpCounter` that implements the `Counter` interface by asynchronously counting the IPs in the slice `AddIpSlice(ips []uint32)`.
+Using an interface, I decouple `ReadFile` function from whatever implements the `Counter` interface which is Golang best practices. In this case it's `ipcounter.IpCounter` that implements the `Counter` interface by asynchronously counting unique IPs in the slice `AddIpSlice(ips []uint32)`.
 This decoupling allows for higher modularity which has important implications:
 1. Simpler code
 2. Simpler testing. Each feature can be unit tested separately. Same thing for benchmarking. See the tests and benchmarks for details.
@@ -90,7 +99,7 @@ See the main function or the bench marking tests in `ipcounter` package to see h
 
 ## Profiling
 
-This program is meticulously profile using Golang pprof tooling
+This program is meticulously profiled using Golang pprof tooling
 
 ### Memory profiling results
 ```
