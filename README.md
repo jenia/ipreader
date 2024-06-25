@@ -1,4 +1,21 @@
 # Welcome to batch IP Reader
+
+## Results from processing the 100G file:
+
+```
+ipreader>go run .
+Count is: 301774584
+```
+
+Sanity check:
+```
+$ sort "/run/media/jenia/My Book/ip_addresses" | uniq | wc -l
+301774584
+```
+
+ipreader>go run .
+Count is: 301774584
+
 An asynchronous text processor and batch file reader.
 
 ## Table of contents
@@ -60,34 +77,16 @@ See the main function or the bench marking tests in `ipcounter` package to see h
 
 This program is meticulously profile using Golang pprof tooling
 
-### CPU Benchmarking results
-
-It seems that this program has better performance with larger slices. This was expected.
-
+### Memory profiling results
 ```
-cd ipcounter
-go test -bench=. -benchmem -memprofile mem.prof -cpuprofile cpu.prof -benchtime=10s
-
-goos: linux
-goarch: amd64
-pkg: github.com/Ecwid/new-job/ipcounter
-cpu: Intel(R) Core(TM) i7-4790K CPU @ 4.00GHz
-BenchmarkCount1GoRoutine100ItemSlice-8     	33546852	       459.2 ns/op	      99 B/op	       3 allocs/op
-BenchmarkCount1GoRoutine1000ItemSlice-8    	32292217	       567.7 ns/op	     145 B/op	       3 allocs/op
-BenchmarkCount10GoRoutine100ItemSlice-8    	28279573	       535.3 ns/op	     107 B/op	       3 allocs/op
-BenchmarkCount10GoRoutine1000ItemSlice-8   	33324129	       588.2 ns/op	     143 B/op	       3 allocs/op
-PASS
-ok  	github.com/Ecwid/new-job/ipcounter	70.597s
+>go test -bench=. -benchmem -memprofile mem.prof -cpuprofile cpu.prof -benchtime=60s
+   11264MB 50.36% 50.36%    11264MB 50.36%  github.com/Ecwid/new-job/ipcounter.NewIpCounter (inline)
+ 3558.05MB 15.91% 66.27%  3558.05MB 15.91%  net.ParseIP (inline)
+ 3542.05MB 15.84% 82.11%  3542.05MB 15.84%  bufio.(*Scanner).Text (inline)
+ 2255.24MB 10.08% 92.19%  9355.35MB 41.83%  github.com/Ecwid/new-job/ipreader.ReadFile
+  627.40MB  2.81% 95.00%   627.40MB  2.81%  bytes.growSlice
+  451.51MB  2.02% 97.02%  1739.42MB  7.78%  github.com/Ecwid/new-job.writeIpsToFile
+  335.51MB  1.50% 98.52%   659.51MB  2.95%  fmt.Sprintf
+     322MB  1.44%   100%      322MB  1.44%  net/netip.Addr.string4 (inline)
+       1MB 0.0045%   100%   628.40MB  2.81%  bytes.(*Buffer).grow
 ```
-
-### Conclusion regarding CPU benchmarking
-|                                          | ns/item              |
-| ---------------------------------------- | -------------------- |
-| BenchmarkCount1GoRoutine100ItemSlice-8   | 459.2 /100 = 4.592   |
-| BenchmarkCount1GoRoutine1000ItemSlice-8  | 567.7/1000 = 0.567.7 |
-| BenchmarkCount10GoRoutine100ItemSlice-8  | 535.3/100  = 5.353   |
-| BenchmarkCount10GoRoutine1000ItemSlice-8 | 588.2/1000 = 0.5882  |
-
-
-This means that it is best to initiate the IpReader with a bigger buffer and send bigger slices to IpCounter
-

@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	file, err := os.Open("./ips.txt")
+	file, err := os.Open("/run/media/jenia/My Book/ip_addresses")
 	if err != nil {
 		fmt.Printf("open file: %s", err.Error())
 		panic(err)
