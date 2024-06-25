@@ -3,11 +3,14 @@ package ipcounter
 import (
 	"sync"
 )
+const (
+	ipSize = 32
+)
 
 type IpCounter struct {
 	ipSlices chan []uint32
 	Counter  uint64
-	ips      []bool
+	ips      []uint32
 	mtx      sync.Mutex
 	closed   bool
 }
@@ -15,7 +18,7 @@ type IpCounter struct {
 // Can only create one of these objects
 func NewIpCounter() *IpCounter {
 	ipSlices := make(chan []uint32, 1)
-	ips := make([]bool, uint64(1) << 32)
+	ips := make([]uint32, 134_217_728)
 	return &IpCounter{ipSlices: ipSlices, ips: ips}
 }
 
@@ -24,9 +27,13 @@ func (i *IpCounter) Count(wg *sync.WaitGroup) {
 	for ipSlice := range i.ipSlices {
 		for _, ip := range ipSlice {
 			i.mtx.Lock()
-			if i.ips[ip] == false {
+			q := ip / ipSize
+			r := ip % ipSize
+			row := i.ips[q]
+			if row &(1<<r) == 0 {
+				row |= 1 << r
+				i.ips[q] = row
 				i.Counter++
-				i.ips[ip] = true
 			}
 			i.mtx.Unlock()
 		}

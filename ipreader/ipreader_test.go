@@ -1,15 +1,16 @@
 package ipreader
 
 import (
+	"net"
 	"strings"
 	"testing"
 )
 
 type counterMock struct {
-	ipsCh chan []string
+	ipsCh chan []uint32
 }
 
-func (c *counterMock) AddIpSlice(ips []string) {
+func (c *counterMock) AddIpSlice(ips []uint32) {
 	c.ipsCh <- ips
 }
 
@@ -27,7 +28,7 @@ func TestRead(t *testing.T) {
 3.45.71.5
 `
 		r := strings.NewReader(fileContent)
-		ipChan := make(chan []string, 1)
+		ipChan := make(chan []uint32, 1)
 		sizeOfIP4Address := 20
 		buffer := make([]byte, sizeOfIP4Address)
 		counterMock := counterMock{ipsCh: ipChan}
@@ -41,8 +42,9 @@ func TestRead(t *testing.T) {
 		lines = lines[:len(lines)-1] // drop the line with only the \n
 		for ipSlice := range ipChan {
 			for j, ip := range ipSlice {
-				if lines[i] != ipSlice[j] {
-					t.Fatalf("ip should be %s, but is %s", lines[i], ip)
+				ipInt, _ := Ipv4ToInt(net.ParseIP(lines[i]))
+				if ipInt != ipSlice[j] {
+					t.Fatalf("ip should be %d, but is %d", ipInt, ip)
 				}
 				i++
 			}
@@ -61,7 +63,7 @@ func TestRead(t *testing.T) {
 3.45.71.5
 `
 		r := strings.NewReader(fileContent)
-		ipChan := make(chan []string, 1)
+		ipChan := make(chan []uint32, 1)
 		buffer := make([]byte, 1024)
 		counterMock := counterMock{ipsCh: ipChan}
 
@@ -76,8 +78,9 @@ func TestRead(t *testing.T) {
 			t.Fatalf("ipSlice len should %d, but instead is %d: %+v", len(lines), len(ipSlice), ipSlice)
 		}
 		for i, line := range lines {
-			if line != ipSlice[i] {
-				t.Fatalf("ip should be %s, but is %s", line, ipSlice[i])
+			ipInt, _ := Ipv4ToInt(net.ParseIP(line))
+			if ipInt != ipSlice[i] {
+				t.Fatalf("ip should be %d, but is %d", ipInt, ipSlice[i])
 			}
 		}
 	})
@@ -90,7 +93,7 @@ func TestRead(t *testing.T) {
 89.54.3.124
 3.45.71.5`
 		r := strings.NewReader(fileContent)
-		ipChan := make(chan []string, 1)
+		ipChan := make(chan []uint32, 1)
 		buffer := make([]byte, 1024)
 		counterMock := counterMock{ipsCh: ipChan}
 
@@ -104,8 +107,9 @@ func TestRead(t *testing.T) {
 			t.Fatalf("ipSlice len should %d, but instead is %d: %+v", len(lines), len(ipSlice), ipSlice)
 		}
 		for i, line := range lines {
-			if line != ipSlice[i] {
-				t.Fatalf("ip should be %s, but is %s", line, ipSlice[i])
+			ipInt, _ := Ipv4ToInt(net.ParseIP(line))
+			if ipInt != ipSlice[i] {
+				t.Fatalf("ip should be %d, but is %d", ipInt, ipSlice[i])
 			}
 		}
 	})
@@ -114,7 +118,7 @@ func TestRead(t *testing.T) {
 		//setup
 		fileContent := ``
 		r := strings.NewReader(fileContent)
-		ipChan := make(chan []string, 1)
+		ipChan := make(chan []uint32, 1)
 		buffer := make([]byte, 1024)
 		counterMock := counterMock{ipsCh: ipChan}
 
@@ -133,7 +137,7 @@ func TestRead(t *testing.T) {
 		fileContent := `
 `
 		r := strings.NewReader(fileContent)
-		ipChan := make(chan []string, 1)
+		ipChan := make(chan []uint32, 1)
 		buffer := make([]byte, 1024)
 		counterMock := counterMock{ipsCh: ipChan}
 
