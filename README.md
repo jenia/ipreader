@@ -1,40 +1,32 @@
-# IpReader
+# Welcome to batch IP Reader
 An asynchronous text processor and batch file reader.
 
-## Limitations
-This program consumes a lot of memory because it holds the IPs in memory in a hash table.
-Normally, this program should search/write the IPs to a relational database:
-```
-BEGIN SERIALIZABLE;
-SELECT ip
-FROM ips
-WHERE NOT EXISTS (
-    SELECT 1
-    FROM (VALUES
-        (ip1),
-        (ip2),
-    ) AS batch(ip)
-    WHERE ips.ipv4 = batch.ip
-);
-INSERT INTO ips (ipv4) values ip1, ip2,...
-ON CONFLICT DO NOTHING;
-COMMIT;
-```
-
-Ofcourse the table `ips` needs to be indexed. If we're in a multi-tenant environment, then we need to search/insert using the column `tenant_id` (or something similar) as well.
-
-I decided not to use a database for demo purposes but instead focus on Golang and its asynchronous functionality.
+## Table of contents
+  - [Architecture description](#Architecture-description)
+    - [ipreader package](#ipreader-package)
+	- [ipcounter package](#ipcounter-package)
+  - [Profiling](#Profiling)
+    - [CPU Benchmarking results](#CPU-Benchmarking-results)
+	- [Conclusion regarding CPU benchmarking](#Conclusion-regarding-CPU-benchmarking)
 
 ## Architecture description
 
-This program reads a file that contains one IP address per line and counts the number of unique IP.
+This program reads a file that contains one IP address per line and asynchronously counts the number of unique IPs contained in that file.
 
 This program has two packages:
 - ipreader
 - ipcounter
 
+This program is carefully designed to process large volume of data while using a minimum of resources:
+
+- This program is profile using Golang [pprof tooling](profiling)
+- ips are treated as numbers rather than strings to optimize memory and lookup performance
+- ipcounter pre-allocate a 2^32 slice to store all IP V4 to avoid doing unnecessary malloc and data copying
+- ipcounter and ipreader are async to maximize CPU utilization
+- ipreader is carefully designed to read the file one buffer size at a time to minimize context switching
+
 ### ipreader package
-This package defines a function `ReadFile` that reads a file into a buffer and sends all the IPs contained in that buffer to `Counter.AddIpSlice(ips []string)`.
+This package defines a function `ReadFile` that reads a file into a buffer and sends all the IPs contained in that buffer to `Counter.AddIpSlice(ips []uint32)`.
 
 Note the signature of the function `func ReadFile(file io.Reader, counter Counter, buffer []byte) error`
 
@@ -43,13 +35,13 @@ It takes
 2. `Counter` interface
 ```
 type Counter interface {
-	AddIpSlice(ips []string)
+	AddIpSlice(ips []uint32)
 	Close()
 }
 ```
 3. a `[]byte` buffer
 
-Using an interface, I decouple `ReadFile` function from whatever implements the `Counter` interface which is Golang best practices. In this case it's `ipcounter.IpCounter` that implements the `Counter` interface by asynchronously counting the IPs in the slice `AddIpSlice(ips []string)`.
+Using an interface, I decouple `ReadFile` function from whatever implements the `Counter` interface which is Golang best practices. In this case it's `ipcounter.IpCounter` that implements the `Counter` interface by asynchronously counting the IPs in the slice `AddIpSlice(ips []uint32)`.
 This decoupling allows for higher modularity which has important implications:
 1. Simpler code
 2. Simpler testing. Each feature can be unit tested separately. Same thing for benchmarking. See the tests and benchmarks for details.
@@ -57,13 +49,18 @@ This decoupling allows for higher modularity which has important implications:
 Furthermore, using a buffer + goroutines we can bulk read and async process the IPs.
 
 ### ipcounter package
+
 This package defines a struct `IpCounter` that counts unique IPs sent to it using the function `AddIpSlice`. Each item in the slice is one IP.
 The struct `IpCounter` is meant to be instantiated once.
 The function `Count` can run, and it meant to be run (see benchmarking), on multiple go-routines
 
 See the main function or the bench marking tests in `ipcounter` package to see how to instantiate and use `IpCounter`
 
-## CPU Benchmarking results.
+## Profiling
+
+This program is meticulously profile using Golang pprof tooling
+
+### CPU Benchmarking results
 
 It seems that this program has better performance with larger slices. This was expected.
 
