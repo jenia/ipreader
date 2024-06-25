@@ -1,6 +1,16 @@
 # Welcome to batch IP Reader
+An asynchronous text processor and batch file reader.
 
-## Results from processing the 100G file:
+## Table of contents
+  - [Results from processing the 100G file](#Results-from-processing-the-100G-file)
+  - [Architecture description](#Architecture-description)
+    - [ipreader package](#ipreader-package)
+	- [ipcounter package](#ipcounter-package)
+  - [Profiling](#Profiling)
+    - [CPU Benchmarking results](#CPU-Benchmarking-results)
+	- [Conclusion regarding CPU benchmarking](#Conclusion-regarding-CPU-benchmarking)
+
+## Results from processing the 100G file
 
 ```
 ipreader>go run .
@@ -12,19 +22,6 @@ Sanity check:
 $ sort "/run/media/jenia/My Book/ip_addresses" | uniq | wc -l
 301774584
 ```
-
-ipreader>go run .
-Count is: 301774584
-
-An asynchronous text processor and batch file reader.
-
-## Table of contents
-  - [Architecture description](#Architecture-description)
-    - [ipreader package](#ipreader-package)
-	- [ipcounter package](#ipcounter-package)
-  - [Profiling](#Profiling)
-    - [CPU Benchmarking results](#CPU-Benchmarking-results)
-	- [Conclusion regarding CPU benchmarking](#Conclusion-regarding-CPU-benchmarking)
 
 ## Architecture description
 
@@ -38,6 +35,7 @@ This program is carefully designed to process large volume of data while using a
 
 - This program is profile using Golang [pprof tooling](profiling)
 - ips are treated as numbers rather than strings to optimize memory and lookup performance
+- ips are stored in a kind of multiplication table to optimize memory usage
 - ipcounter pre-allocate a 2^32 slice to store all IP V4 to avoid doing unnecessary malloc and data copying
 - ipcounter and ipreader are async to maximize CPU utilization
 - ipreader is carefully designed to read the file one buffer size at a time to minimize context switching
