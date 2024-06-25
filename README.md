@@ -2,6 +2,9 @@
 An asynchronous text processor and batch file reader.
 
 ## Table of contents
+  - [How to use the program](#How-to-use-the-program)
+    - [Testing](#testing)
+	- [Profiling](#profiling)
   - [Results from processing the 100G file](#Results-from-processing-the-100G-file)
   - [Architecture description](#Architecture-description)
     - [ipreader package](#ipreader-package)
@@ -9,6 +12,20 @@ An asynchronous text processor and batch file reader.
   - [Profiling](#Profiling)
     - [CPU Benchmarking results](#CPU-Benchmarking-results)
 	- [Conclusion regarding CPU benchmarking](#Conclusion-regarding-CPU-benchmarking)
+
+## How to use the program
+Simply open the main.go file, and change the value of the variable `	file, err := os.Open("/run/media/jenia/My Book/ip_addresses")` with the path to the IP file you want to process
+
+### Testing
+```
+go test ./...
+```
+### Profiling
+```
+go test -bench=. -benchmem -memprofile mem.prof -cpuprofile cpu.prof -benchtime=60s
+go tool pprof mem.prof
+top 20
+```
 
 ## Results from processing the 100G file
 
@@ -33,7 +50,7 @@ This program has two packages:
 
 This program is carefully designed to process large volume of data while using a minimum of resources:
 
-- This program is profile using Golang [pprof tooling](profiling)
+- This program is profile using Golang pprof tooling
 - ips are treated as numbers rather than strings to optimize memory and lookup performance
 - ips are stored in a kind of multiplication table to optimize memory usage
 - ipcounter pre-allocate a 2^32 slice to store all IP V4 to avoid doing unnecessary malloc and data copying
@@ -78,6 +95,8 @@ This program is meticulously profile using Golang pprof tooling
 ### Memory profiling results
 ```
 >go test -bench=. -benchmem -memprofile mem.prof -cpuprofile cpu.prof -benchtime=60s
+go tool pprof mem.prof
+top 20
    11264MB 50.36% 50.36%    11264MB 50.36%  github.com/Ecwid/new-job/ipcounter.NewIpCounter (inline)
  3558.05MB 15.91% 66.27%  3558.05MB 15.91%  net.ParseIP (inline)
  3542.05MB 15.84% 82.11%  3542.05MB 15.84%  bufio.(*Scanner).Text (inline)
