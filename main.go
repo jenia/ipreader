@@ -8,6 +8,8 @@ import (
 	"sync"
 )
 
+const readBufferSize = 1024 * 1024
+
 func main() {
 	file, err := os.Open("/run/media/jenia/My Book/ip_addresses")
 	if err != nil {
@@ -20,7 +22,7 @@ func main() {
 	ipCounter := ipcounter.NewIpCounter()
 	wg.Add(1)
 	go ipCounter.Count(wg)
-	buf := make([]byte, 1024 * 1024)
+	buf := make([]byte, readBufferSize)
 	ipreader.ReadFile(file, ipCounter, buf)
 	wg.Wait()
 	fmt.Printf("Count is: %d\n", ipCounter.Counter)

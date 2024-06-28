@@ -69,7 +69,11 @@ This program is carefully designed to process large volume of data while using a
 ### ipreader package
 This package defines a function `ReadFile` that reads a file into a buffer and sends all the IPs contained in that buffer to `Counter.AddIpSlice(ips []uint32)`.
 
-Note the signature of the function `func ReadFile(file io.Reader, counter Counter, buffer []byte) error`
+Note the signature of the function:
+
+```
+func ReadFile(file io.Reader, counter Counter, buffer []byte) error`
+```
 
 It takes
 1. `io.Reader` file handle

@@ -3,13 +3,14 @@ package ipcounter
 import (
 	"sync"
 )
+
 const (
 	ipSize = 32
 )
 
 type IpCounter struct {
 	ipSlices chan []uint32
-	Counter  uint64
+	Counter  uint32
 	ips      []uint32
 	mtx      sync.Mutex
 	closed   bool
@@ -21,7 +22,7 @@ func NewIpCounter() *IpCounter {
 	// I'm making a multiplication table of sorts to hold the IPs
 	// the number 134_217_728 = number of IP v4 / 32
 	// 32 is the length of uint32
-	// So this means that number of IPv4 = 134_217_728 * 32
+	// So, 134_217_728 * 32 is the dimension of the table
 	ips := make([]uint32, 134_217_728)
 	return &IpCounter{ipSlices: ipSlices, ips: ips}
 }

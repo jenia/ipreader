@@ -30,7 +30,7 @@ func BenchmarkTestEntireProgram(b *testing.B) {
 		ipCounter := ipcounter.NewIpCounter()
 		wg.Add(1)
 		go ipCounter.Count(wg)
-		buf := make([]byte, 1024)
+		buf := make([]byte, readBufferSize)
 		ipreader.ReadFile(file, ipCounter, buf)
 		wg.Wait()
 		fmt.Printf("Count is: %d\n", ipCounter.Counter)
@@ -57,7 +57,7 @@ func writeIpsToFile() {
 		if err != nil {
 			panic(err)
 		}
-		if i % 1024 == 0 {
+		if i%1024 == 0 {
 			file.Write(fileBuf.Bytes())
 			fileBuf = &bytes.Buffer{}
 		}
